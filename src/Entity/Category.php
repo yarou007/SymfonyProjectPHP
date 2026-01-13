@@ -18,8 +18,6 @@ class Category
     #[ORM\Column(length: 255)]
     private ?string $name = null;
 
-    #[ORM\Column(length: 255, nullable: true)]
-    private ?string $description = null;
 
     #[ORM\OneToMany(mappedBy: 'category', targetEntity: Product::class)]
     private Collection $products;
@@ -34,7 +32,7 @@ class Category
         return $this->id;
     }
 
-    public function getName(): ?string
+    public function getCategoryName(): ?string
     {
         return $this->name;
     }
@@ -45,16 +43,7 @@ class Category
         return $this;
     }
 
-    public function getDescription(): ?string
-    {
-        return $this->description;
-    }
 
-    public function setDescription(?string $description): static
-    {
-        $this->description = $description;
-        return $this;
-    }
 
     public function getProducts(): Collection
     {
