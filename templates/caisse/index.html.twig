@@ -1,0 +1,136 @@
+{% extends 'base.html.twig' %}
+{% block title %}caisse{% endblock %}
+
+{% block body %}
+<div class="container-fluid mt-4">
+  <div class="row">
+
+    <!-- 🟩 Zone Catégories -->
+    <div class="col-md-2 border-end" id="categoryZone">
+      <h5 class="text-center">Catégories</h5>
+      {% include 'caisse/_category.html.twig' with { categories: categories } %}
+    </div>
+
+    <!-- 🟦 Zone Produits -->
+    <div class="col-md-7 border-end" id="productZone">
+      <h5 class="text-center">Produits</h5>
+      <p class="text-muted text-center">Sélectionnez une catégorie pour afficher les produits</p>
+    </div>
+
+    <!-- 🧾 Zone Ticket -->
+    <div class="col-md-3" id="ticketZone">
+      {% include 'caisse/_ticket.html.twig' %}
+    </div>
+
+  </div>
+</div>
+
+<script>
+  function loadProducts(categoryId) {
+    fetch('/caisse/GetProductsByCategory?categoryId=' + categoryId)
+      .then(response => response.text())
+      .then(html => {
+        document.getElementById('productZone').innerHTML =
+          '<h5 class="text-center">Produits</h5>' + html;
+      });
+  }
+
+  function addToTicket(name, price) {
+    const ticketBody = document.getElementById("ticketBody");
+    let found = false;
+
+    for (let row of ticketBody.rows) {
+      if (row.cells[1].textContent === name) {
+        let qte = parseInt(row.cells[0].textContent);
+        qte += 1;
+        row.cells[0].textContent = qte;
+
+        let newTotal = (qte * price).toFixed(3);
+        row.cells[3].textContent = newTotal;
+
+        found = true;
+        break;
+      }
+    }
+
+    if (!found) {
+      const row = document.createElement("tr");
+      row.innerHTML = `
+        <td>1</td>
+        <td>${name}</td>
+        <td>${price.toFixed(3)}</td>
+        <td>${price.toFixed(3)}</td>
+        <td>
+          <a href="#" class="remove-item">
+            <i class="bi bi-trash" style="color:black;"></i>
+          </a>
+        </td>
+      `;
+
+      row.querySelector(".remove-item").addEventListener("click", function (e) {
+        e.preventDefault();
+
+        let qte = parseInt(row.cells[0].textContent);
+        let pu = parseFloat(row.cells[2].textContent);
+
+        const totalEl = document.getElementById("ticketTotal");
+        let total = parseFloat(totalEl.textContent) || 0;
+
+        if (qte > 1) {
+          qte -= 1;
+          row.cells[0].textContent = qte;
+          row.cells[3].textContent = (qte * pu).toFixed(3);
+        } else {
+          row.remove();
+        }
+
+        totalEl.textContent = (total - pu).toFixed(3);
+      });
+
+      ticketBody.appendChild(row);
+    }
+
+    const totalEl = document.getElementById("ticketTotal");
+    let currentTotal = parseFloat(totalEl.textContent) || 0;
+    totalEl.textContent = (currentTotal + parseFloat(price)).toFixed(3);
+  }
+
+  function resetTicket() {
+    fetch('/caisse/Annuler')
+      .then(response => response.text())
+      .then(html => {
+        document.getElementById("ticketZone").innerHTML = html;
+      });
+  }
+
+  function encaisser() {
+    const lignes = document.querySelectorAll("#ticketBody tr");
+    let produits = [];
+
+    lignes.forEach(row => {
+      const qte = parseInt(row.cells[0].textContent);
+      const nom = row.cells[1].textContent;
+      const pu = parseFloat(row.cells[2].textContent);
+      const pt = parseFloat(row.cells[3].textContent);
+
+      if (!isNaN(qte) && nom) {
+        produits.push({ nom, qte, pu, pt });
+      }
+    });
+
+    fetch("/caisse/Encaisser", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(produits)
+    })
+    .then(res => res.json())
+    .then(data => {
+      if (data.ticketId) {
+        resetTicket();
+      } else {
+        alert("Erreur encaissement");
+      }
+    });
+  }
+</script>
+{% endblock %}

@@ -1,0 +1,23 @@
+<h5 class="text-center">Caisse</h5>
+<p><strong>Date :</strong> {{ "now"|date("d/m/Y H:i:s") }}</p>
+<p><strong>Détails Ticket</strong></p>
+
+<table class="table table-sm table-bordered">
+  <thead>
+    <tr>
+      <th>Qte</th>
+      <th>Nom</th>
+      <th>P.U</th>
+      <th>P.T</th>
+      <th>Action</th>
+    </tr>
+  </thead>
+  <tbody id="ticketBody"></tbody>
+</table>
+
+<p><strong>Total :</strong> <span id="ticketTotal">0.000</span> DT</p>
+
+<button class="btn btn-success w-100" onclick="encaisser()">Encaisser</button>
+<button class="btn btn-danger w-100 mt-2" onclick="resetTicket()">Réinitialiser</button>
+
+<div class="row" style=

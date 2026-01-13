@@ -1,0 +1,6 @@
+{% for category in categories %}
+  <button class="btn btn-outline-success mb-2 w-100"
+          onclick="loadProducts({{ category.id }})">
+    {{ category.categoryName }}
+  </button>
+{% endfor %}
