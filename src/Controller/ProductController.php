@@ -40,10 +40,15 @@ class ProductController extends AbstractController
     #[Route('/add', name: 'add', methods: ['POST'])]
     public function add(Request $request): Response
     {
-        $productName = trim((string) $request->request->get('productName'));
-        $productQuantity = (int) $request->request->get('productQuantity');
-        $productUnitPrice = (string) $request->request->get('productUnitPrice'); // decimal stored as string
-        $categoryId = (int) $request->request->get('categoryId');
+        $name = trim((string) $request->request->get('ProductName'));
+        $qty  = (int) $request->request->get('ProductQuantity');
+        $unitPrice = (string) $request->request->get('ProductUnitPrice'); // decimal stored as string
+        $categoryId = (int) $request->request->get('CategoryId');
+
+        if ($name === '') {
+            $this->addFlash('error', 'Product name is required.');
+            return $this->redirectToRoute('product_create');
+        }
 
         $category = $this->em->getRepository(Category::class)->find($categoryId);
         if (!$category) {
@@ -52,9 +57,9 @@ class ProductController extends AbstractController
         }
 
         $product = new Product();
-        $product->setProductName($productName);
-        $product->setProductQuantity($productQuantity);
-        $product->setProductUnitPrice($productUnitPrice);
+        $product->setProductName($name);
+        $product->setProductQuantity($qty);
+        $product->setProductUnitPrice($unitPrice);
         $product->setCategory($category);
 
         $this->em->persist($product);
@@ -66,11 +71,14 @@ class ProductController extends AbstractController
     #[Route('/{id}/edit', name: 'edit_form', methods: ['GET'])]
     public function editForm(int $id): Response
     {
-        $categories = $this->em->getRepository(Category::class)->findAll();
         $product = $this->em->getRepository(Product::class)->find($id);
+        $categories = $this->em->getRepository(Category::class)->findAll();
 
         if (!$product) {
-            throw $this->createNotFoundException('Product not found');
+            return $this->render('product/edit.html.twig', [
+                'product' => null,
+                'categories' => $categories,
+            ]);
         }
 
         return $this->render('product/edit.html.twig', [
@@ -83,34 +91,34 @@ class ProductController extends AbstractController
     public function edit(int $id, Request $request): Response
     {
         $product = $this->em->getRepository(Product::class)->find($id);
-        if (!$product) {
-            throw $this->createNotFoundException('Product not found');
+
+        if ($product) {
+            $name = trim((string) $request->request->get('ProductName'));
+            $qty  = (int) $request->request->get('ProductQuantity');
+            $unitPrice = (string) $request->request->get('ProductUnitPrice');
+            $categoryId = (int) $request->request->get('CategoryId');
+
+            $category = $this->em->getRepository(Category::class)->find($categoryId);
+
+            if ($name !== '' && $category) {
+                $product->setProductName($name);
+                $product->setProductQuantity($qty);
+                $product->setProductUnitPrice($unitPrice);
+                $product->setCategory($category);
+                $this->em->flush();
+            }
         }
-
-        $productName = trim((string) $request->request->get('productName'));
-        $productQuantity = (int) $request->request->get('productQuantity');
-        $productUnitPrice = (string) $request->request->get('productUnitPrice');
-        $categoryId = (int) $request->request->get('categoryId');
-
-        $category = $this->em->getRepository(Category::class)->find($categoryId);
-        if (!$category) {
-            $this->addFlash('error', 'Category not found.');
-            return $this->redirectToRoute('product_edit_form', ['id' => $id]);
-        }
-
-        $product->setProductName($productName);
-        $product->setProductQuantity($productQuantity);
-        $product->setProductUnitPrice($productUnitPrice);
-        $product->setCategory($category);
-
-        $this->em->flush();
 
         return $this->redirectToRoute('product_index');
     }
 
     #[Route('/{id}/delete', name: 'delete', methods: ['POST'])]
-    public function delete(int $id): Response
+    public function delete(int $id, Request $request): Response
     {
+        if (!$this->isCsrfTokenValid('delete_product_'.$id, (string) $request->request->get('_token'))) {
+            throw $this->createAccessDeniedException('Invalid CSRF token.');
+        }
+
         $product = $this->em->getRepository(Product::class)->find($id);
 
         if ($product) {

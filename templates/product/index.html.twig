@@ -1,20 +1,44 @@
 {% extends 'base.html.twig' %}
 
-{% block title %}Hello ProductController!{% endblock %}
+{% block title %}Product{% endblock %}
 
 {% block body %}
-<style>
-    .example-wrapper { margin: 1em auto; max-width: 800px; width: 95%; font: 18px/1.5 sans-serif; }
-    .example-wrapper code { background: #F5F5F5; padding: 2px 6px; }
-</style>
+<h1>Product</h1>
 
-<div class="example-wrapper">
-    <h1>Hello {{ controller_name }}! ✅</h1>
+<p>
+  <a href="{{ path('product_create') }}">Create New Product</a>
+</p>
 
-    This friendly message is coming from:
-    <ul>
-        <li>Your controller at <code>/home/yassine-hammi/Bureau/BonApp/src/Controller/ProductController.php</code></li>
-        <li>Your template at <code>/home/yassine-hammi/Bureau/BonApp/templates/product/index.html.twig</code></li>
-    </ul>
-</div>
+<table class="table">
+  <thead>
+    <tr>
+      <th>Id</th>
+      <th>Name</th>
+      <th>Quantity</th>
+      <th>Unit Price</th>
+      <th>Category</th>
+      <th colspan="2">Action</th>
+    </tr>
+  </thead>
+  <tbody>
+  {% for p in products %}
+    <tr>
+      <td>{{ p.id }}</td>
+      <td>{{ p.productName }}</td>
+      <td>{{ p.productQuantity }}</td>
+      <td>{{ p.productUnitPrice }}</td>
+      <td>{{ p.category ? p.category.categoryName : '' }}</td>
+      <td>
+        <a class="btn btn-primary" href="{{ path('product_edit_form', {id: p.id}) }}">Edit</a>
+      </td>
+      <td>
+        <form method="post" action="{{ path('product_delete', {id: p.id}) }}" style="display:inline;">
+          <input type="hidden" name="_token" value="{{ csrf_token('delete_product_' ~ p.id) }}">
+          <button type="submit" class="btn btn-danger">Delete</button>
+        </form>
+      </td>
+    </tr>
+  {% endfor %}
+  </tbody>
+</table>
 {% endblock %}

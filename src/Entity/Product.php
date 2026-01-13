@@ -23,6 +23,9 @@ class Product
     private ?string $price = null;
 
     #[ORM\Column]
+    private ?int $quantity = null;
+
+    #[ORM\Column]
     private ?bool $isAvailable = true;
 
     #[ORM\ManyToOne(inversedBy: 'products')]
@@ -34,23 +37,35 @@ class Product
         return $this->id;
     }
 
-    public function getName(): ?string
-    {
-        return $this->name;
-    }
 
-    public function setName(string $name): static
+    public function setProductName(string $name): static
     {
         $this->name = $name;
         return $this;
     }
 
-    public function getPrice(): ?string
+
+     public function getProductName(): ?string
+    {
+        return $this->name;
+    }
+
+    public function setProductQuantity(int $quantity): static
+    {
+        $this->quantity = $quantity;
+        return $this;
+    }
+    public function getProductQuantity(): ?int
+    {
+        return $this->quantity;
+    }
+
+    public function getProductUnitPrice(): ?string
     {
         return $this->price;
     }
 
-    public function setPrice(string $price): static
+    public function setProductUnitPrice(string $price): static
     {
         $this->price = $price;
         return $this;
