@@ -59,7 +59,7 @@ class CaisseController extends AbstractController
         }
 
         $ticket = new Ticket();
-        $ticket->setDate(new \DateTimeImmutable());
+        $ticket->setDate(new \DateTime());
 
         $total = 0.0;
 
