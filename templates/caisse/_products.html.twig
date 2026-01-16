@@ -1,12 +1,16 @@
-<p class="text-muted text-center">Cliquez sur un produit pour l’ajouter au ticket</p>
-
-<div class="row">
-  {% for product in products %}
-    <div class="col-4 mb-2">
-      <button class="btn btn-outline-secondary m-2"
-              onclick='addToTicket({{ product.productName|json_encode|raw }}, {{ product.productUnitPrice }})'>
-        {{ product.productName }}
+{# templates/caisse/_products.html.twig #}
+<div class="d-flex flex-wrap gap-2 justify-content-center">
+  {% for p in products %}
+    {% if p.isAvailable and p.productQuantity > 0 %}
+      <button type="button"
+              class="btn btn-outline-secondary"
+              onclick="addToTicket({{ p.id }}, '{{ p.productName|e('js') }}', {{ p.productUnitPrice }})">
+        {{ p.productName }}
       </button>
-    </div>
+    {% else %}
+      <button type="button" class="btn btn-outline-secondary" disabled>
+        {{ p.productName }} (rupture)
+      </button>
+    {% endif %}
   {% endfor %}
 </div>

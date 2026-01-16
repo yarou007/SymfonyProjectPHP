@@ -1,0 +1,32 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <title>Login</title>
+</head>
+<body style="font-family: Arial; max-width: 420px; margin: 80px auto;">
+    <h2>Login</h2>
+
+    {% if error %}
+        <div style="background:#fdd; padding:10px; margin-bottom:10px;">
+            {{ error.messageKey|trans(error.messageData, 'security') }}
+        </div>
+    {% endif %}
+
+    <form method="post">
+        <label>Email</label>
+        <input type="email" name="email" value="{{ last_username }}" required style="width:100%;padding:8px;margin:6px 0;">
+
+        <label>Password</label>
+        <input type="password" name="password" required style="width:100%;padding:8px;margin:6px 0;">
+
+        <input type="hidden" name="_csrf_token" value="{{ csrf_token('authenticate') }}">
+
+        <button type="submit" style="width:100%;padding:10px;margin-top:10px;">Sign in</button>
+    </form>
+
+    <p style="margin-top:15px;">
+        No account? <a href="{{ path('app_register') }}">Register</a>
+    </p>
+</body>
+</html>

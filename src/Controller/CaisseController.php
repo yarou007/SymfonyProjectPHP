@@ -48,52 +48,69 @@ class CaisseController extends AbstractController
     {
         return $this->render('caisse/_ticket.html.twig');
     }
-
     #[Route('/Encaisser', name: 'encaisser', methods: ['POST'])]
-    public function encaisser(Request $request): JsonResponse
-    {
-        $payload = json_decode((string) $request->getContent(), true);
+public function encaisser(Request $request): JsonResponse
+{
+    $payload = json_decode((string) $request->getContent(), true);
 
-        if (!is_array($payload) || count($payload) === 0) {
-            return new JsonResponse(['error' => 'Ticket vide'], 400);
-        }
-
-        $ticket = new Ticket();
-        $ticket->setDate(new \DateTime());
-
-        $total = 0.0;
-
-        foreach ($payload as $row) {
-            $nom = trim((string) ($row['nom'] ?? ''));
-            $qte = (int) ($row['qte'] ?? 0);
-            $pu  = (float) ($row['pu'] ?? 0);
-            $pt  = (float) ($row['pt'] ?? 0);
-
-            if ($nom === '' || $qte <= 0) {
-                continue;
-            }
-
-            $pu = round($pu, 3);
-            $pt = round($pt, 3);
-
-            $ligne = new LigneTicket();
-            $ligne->setNomProduit($nom);
-            $ligne->setQuantite($qte);
-            $ligne->setPrixUnitaire(number_format($pu, 3, '.', ''));
-            $ligne->setPrixTotal(number_format($pt, 3, '.', ''));
-            $ligne->setTicket($ticket);
-
-            $this->em->persist($ligne);
-
-            $total += $pt;
-        }
-
-        $ticket->setTotal(number_format(round($total, 3), 3, '.', ''));
-
-        $this->em->persist($ticket);
-        $this->em->flush();
-
-        // PDF later — for now just return ticketId
-        return new JsonResponse(['ticketId' => $ticket->getId()]);
+    if (!is_array($payload) || count($payload) === 0) {
+        return new JsonResponse(['error' => 'Ticket vide'], 400);
     }
+
+    $ticket = new Ticket();
+    $ticket->setDate(new \DateTime());
+
+    $total = 0.0;
+
+    foreach ($payload as $row) {
+        $productId = (int) ($row['productId'] ?? 0);
+        $qte = (int) ($row['qte'] ?? 0);
+
+        if ($productId <= 0 || $qte <= 0) {
+            continue;
+        }
+
+        /** @var Product|null $product */
+        $product = $this->em->getRepository(Product::class)->find($productId);
+        if (!$product) {
+            return new JsonResponse(['error' => "Produit introuvable (id=$productId)"], 400);
+        }
+
+        if (!$product->isAvailable()) {
+            return new JsonResponse(['error' => "Produit non disponible: ".$product->getProductName()], 400);
+        }
+
+        $stock = (int) $product->getProductQuantity();
+        if ($stock < $qte) {
+            return new JsonResponse(['error' => "Stock insuffisant: ".$product->getProductName()], 400);
+        }
+
+        // ✅ decrement stock
+        $product->setProductQuantity($stock - $qte);
+
+        // ✅ unit price from DB (more trustworthy than JS)
+        $pu = (float) $product->getProductUnitPrice();
+        $pt = round($qte * $pu, 3);
+
+        $ligne = new LigneTicket();
+        $ligne->setNomProduit($product->getProductName());
+        $ligne->setQuantite($qte);
+        $ligne->setPrixUnitaire(number_format(round($pu, 3), 3, '.', ''));
+        $ligne->setPrixTotal(number_format($pt, 3, '.', ''));
+        $ligne->setTicket($ticket);
+
+        $this->em->persist($ligne);
+        $total += $pt;
+    }
+
+    $ticket->setTotal(number_format(round($total, 3), 3, '.', ''));
+
+    $this->em->persist($ticket);
+    $this->em->flush(); // ✅ flush ticket + lignes + product updates
+
+    return new JsonResponse(['ticketId' => $ticket->getId()]);
+}
+
+
+
 }

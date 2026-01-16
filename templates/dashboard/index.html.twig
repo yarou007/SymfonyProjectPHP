@@ -1,0 +1,157 @@
+{% extends 'base.html.twig' %}
+{% block title %}Dashboard{% endblock %}
+
+{% block body %}
+<div class="container py-4">
+
+  <div class="d-flex align-items-center justify-content-between mb-4">
+    <div>
+      <h2 class="page-title mb-1">Tableau de bord</h2>
+      <div class="muted">Résumé des ventes et du stock</div>
+    </div>
+    <div class="text-end muted">
+      <i class="bi bi-calendar3"></i>
+      {{ "now"|date("d/m/Y H:i") }}
+    </div>
+  </div>
+
+  <!-- KPI cards -->
+  <div class="row g-3">
+    <div class="col-12 col-md-6 col-lg-3">
+      <div class="card card-kpi">
+        <div class="card-body text-white" style="background: linear-gradient(135deg, #198754, #2fbf71);">
+          <div class="d-flex justify-content-between align-items-start">
+            <div>
+              <div class="kpi-label">Ventes du jour</div>
+              <div class="kpi-value">{{ salesToday|number_format(3, '.', ' ') }} DT</div>
+            </div>
+            <div style="font-size:1.6rem; opacity:.9;">
+              <i class="bi bi-graph-up-arrow"></i>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="col-12 col-md-6 col-lg-3">
+      <div class="card card-kpi">
+        <div class="card-body text-white" style="background: linear-gradient(135deg, #0d6efd, #3b82f6);">
+          <div class="d-flex justify-content-between align-items-start">
+            <div>
+              <div class="kpi-label">Tickets émis</div>
+              <div class="kpi-value">{{ ticketsCount }}</div>
+            </div>
+            <div style="font-size:1.6rem; opacity:.9;">
+              <i class="bi bi-receipt"></i>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="col-12 col-md-6 col-lg-3">
+      <div class="card card-kpi">
+        <div class="card-body text-white" style="background: linear-gradient(135deg, #0dcaf0, #22c1dc);">
+          <div class="d-flex justify-content-between align-items-start">
+            <div>
+              <div class="kpi-label">Produits en stock</div>
+              <div class="kpi-value">{{ productsInStock }}</div>
+            </div>
+            <div style="font-size:1.6rem; opacity:.9;">
+              <i class="bi bi-box-seam"></i>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="col-12 col-md-6 col-lg-3">
+      <div class="card card-kpi">
+        <div class="card-body text-white" style="background: linear-gradient(135deg, #dc3545, #ff5b6b);">
+          <div class="d-flex justify-content-between align-items-start">
+            <div>
+              <div class="kpi-label">Stock faible</div>
+              <div class="kpi-value">{{ lowStockCount }} produit(s)</div>
+            </div>
+            <div style="font-size:1.6rem; opacity:.9;">
+              <i class="bi bi-exclamation-triangle"></i>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Tables -->
+  <div class="row g-3 mt-3">
+    <div class="col-12 col-lg-6">
+      <div class="card section-card">
+        <div class="card-header bg-white border-0 d-flex align-items-center justify-content-between">
+          <div>
+            <div class="fw-bold">Top 3 produits</div>
+            <div class="muted" style="font-size:.9rem;">Les plus vendus (global)</div>
+          </div>
+          <span class="badge bg-light text-dark border"><i class="bi bi-star-fill text-warning"></i> Top</span>
+        </div>
+        <div class="card-body pt-0">
+          <table class="table table-hover table-bordered align-middle mb-0">
+            <thead>
+              <tr>
+                <th>Produit</th>
+                <th style="width: 180px;">Quantité vendue</th>
+              </tr>
+            </thead>
+            <tbody>
+              {% for item in topProducts %}
+                <tr>
+                  <td class="fw-semibold">{{ item.name }}</td>
+                  <td>{{ item.qty }}</td>
+                </tr>
+              {% else %}
+                <tr><td colspan="2" class="muted">Aucune vente</td></tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <div class="col-12 col-lg-6">
+      <div class="card section-card">
+        <div class="card-header bg-white border-0 d-flex align-items-center justify-content-between">
+          <div>
+            <div class="fw-bold">Produits à stock critique</div>
+            <div class="muted" style="font-size:.9rem;">Seuil ≤ {{ threshold }}</div>
+          </div>
+          <span class="badge-soft"><i class="bi bi-exclamation-circle"></i> Critique</span>
+        </div>
+        <div class="card-body pt-0">
+          <table class="table table-hover table-bordered align-middle mb-0">
+            <thead>
+              <tr>
+                <th>Produit</th>
+                <th style="width: 180px;">Quantité restante</th>
+              </tr>
+            </thead>
+            <tbody>
+              {% for p in lowStockProducts %}
+                <tr>
+                  <td class="fw-semibold">{{ p.productName }}</td>
+                  <td>
+                    <span class="badge bg-danger-subtle text-danger border">
+                      {{ p.quantity }}
+                    </span>
+                  </td>
+                </tr>
+              {% else %}
+                <tr><td colspan="2" class="muted">Aucun produit en stock critique</td></tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  </div>
+
+</div>
+{% endblock %}

@@ -1,0 +1,81 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}Assistant IA{% endblock %}
+
+{% block body %}
+<div class="container mt-4">
+    <h2>Assistant IA</h2>
+
+    <textarea id="prompt" class="form-control mb-3" rows="4"
+        placeholder="Ask something..."></textarea>
+
+    <button class="btn btn-primary" onclick="askAI()" id="askBtn">Demander</button>
+
+    <h5 class="mt-4">Réponse</h5>
+    <div id="answer" class="alert alert-secondary">
+        No answer
+    </div>
+</div>
+
+<script>
+
+document.addEventListener('DOMContentLoaded', () => {
+  const btn = document.querySelector('#askBtn');
+  const promptEl = document.querySelector('#prompt');
+  const out = document.querySelector('#answer');
+
+  btn.addEventListener('click', async () => {
+    const prompt = promptEl.value || '';
+    out.textContent = '⏳ Thinking...';
+
+    const controller = new AbortController();
+    const timeout = setTimeout(() => controller.abort(), 30000); // 30s
+
+    try {
+      const res = await fetch('/ai/ask', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ prompt }),
+        signal: controller.signal
+      });
+
+      const data = await res.json().catch(() => ({}));
+
+      if (!res.ok) {
+        out.textContent = data.answer || ('HTTP ' + res.status);
+        return;
+      }
+
+      out.textContent = data.answer || 'No response';
+    } catch (e) {
+      out.textContent = (e.name === 'AbortError')
+        ? 'Timeout (30s).'
+        : ('Fetch error: ' + e.message);
+    } finally {
+      clearTimeout(timeout);
+    }
+  });
+});
+function askAI() {
+    const question = document.getElementById('question').value;
+    const answerDiv = document.getElementById('answer');
+
+    answerDiv.innerHTML = "⏳ Thinking...";
+
+   fetch('/ai/ask', {
+  method: 'POST',
+  headers: { 'Content-Type': 'application/json' },
+  body: JSON.stringify({ prompt: textarea.value })
+})
+
+    .then(res => res.json())
+    .then(data => {
+        answerDiv.innerHTML = data.answer ?? 'No response';
+    })
+    .catch(err => {
+        answerDiv.innerHTML = '❌ Error';
+        console.error(err);
+    });
+}
+</script>
+{% endblock %}

@@ -35,65 +35,61 @@
       });
   }
 
-  function addToTicket(name, price) {
-    const ticketBody = document.getElementById("ticketBody");
-    let found = false;
+  function addToTicket(id, name, price) {
+  const ticketBody = document.getElementById("ticketBody");
+  let found = false;
 
-    for (let row of ticketBody.rows) {
-      if (row.cells[1].textContent === name) {
-        let qte = parseInt(row.cells[0].textContent);
-        qte += 1;
-        row.cells[0].textContent = qte;
-
-        let newTotal = (qte * price).toFixed(3);
-        row.cells[3].textContent = newTotal;
-
-        found = true;
-        break;
-      }
+  for (let row of ticketBody.rows) {
+    if (parseInt(row.dataset.pid) === id) {
+      let qte = parseInt(row.cells[0].textContent);
+      qte += 1;
+      row.cells[0].textContent = qte;
+      row.cells[3].textContent = (qte * price).toFixed(3);
+      found = true;
+      break;
     }
-
-    if (!found) {
-      const row = document.createElement("tr");
-      row.innerHTML = `
-        <td>1</td>
-        <td>${name}</td>
-        <td>${price.toFixed(3)}</td>
-        <td>${price.toFixed(3)}</td>
-        <td>
-          <a href="#" class="remove-item">
-            <i class="bi bi-trash" style="color:black;"></i>
-          </a>
-        </td>
-      `;
-
-      row.querySelector(".remove-item").addEventListener("click", function (e) {
-        e.preventDefault();
-
-        let qte = parseInt(row.cells[0].textContent);
-        let pu = parseFloat(row.cells[2].textContent);
-
-        const totalEl = document.getElementById("ticketTotal");
-        let total = parseFloat(totalEl.textContent) || 0;
-
-        if (qte > 1) {
-          qte -= 1;
-          row.cells[0].textContent = qte;
-          row.cells[3].textContent = (qte * pu).toFixed(3);
-        } else {
-          row.remove();
-        }
-
-        totalEl.textContent = (total - pu).toFixed(3);
-      });
-
-      ticketBody.appendChild(row);
-    }
-
-    const totalEl = document.getElementById("ticketTotal");
-    let currentTotal = parseFloat(totalEl.textContent) || 0;
-    totalEl.textContent = (currentTotal + parseFloat(price)).toFixed(3);
   }
+
+  if (!found) {
+    const row = document.createElement("tr");
+    row.dataset.pid = id; // ✅ store product id
+    row.innerHTML = `
+      <td>1</td>
+      <td>${name}</td>
+      <td>${price.toFixed(3)}</td>
+      <td>${price.toFixed(3)}</td>
+      <td><a href="#" class="remove-item"><i class="bi bi-trash" style="color:black;"></i></a></td>
+    `;
+
+    row.querySelector(".remove-item").addEventListener("click", function (e) {
+      e.preventDefault();
+
+      let qte = parseInt(row.cells[0].textContent);
+      let pu = parseFloat(row.cells[2].textContent);
+
+      const totalEl = document.getElementById("ticketTotal");
+      let total = parseFloat(totalEl.textContent) || 0;
+
+      if (qte > 1) {
+        qte -= 1;
+        row.cells[0].textContent = qte;
+        row.cells[3].textContent = (qte * pu).toFixed(3);
+      } else {
+        row.remove();
+      }
+
+      totalEl.textContent = (total - pu).toFixed(3);
+    });
+
+    ticketBody.appendChild(row);
+  }
+
+  const totalEl = document.getElementById("ticketTotal");
+  let currentTotal = parseFloat(totalEl.textContent) || 0;
+  totalEl.textContent = (currentTotal + parseFloat(price)).toFixed(3);
+}
+
+
 
   function resetTicket() {
     fetch('/caisse/Annuler')
@@ -102,35 +98,36 @@
         document.getElementById("ticketZone").innerHTML = html;
       });
   }
+function encaisser() {
+  const lignes = document.querySelectorAll("#ticketBody tr");
+  const produits = [];
 
-  function encaisser() {
-    const lignes = document.querySelectorAll("#ticketBody tr");
-    let produits = [];
-
-    lignes.forEach(row => {
-      const qte = parseInt(row.cells[0].textContent);
-      const nom = row.cells[1].textContent;
-      const pu = parseFloat(row.cells[2].textContent);
-      const pt = parseFloat(row.cells[3].textContent);
-
-      if (!isNaN(qte) && nom) {
-        produits.push({ nom, qte, pu, pt });
-      }
+  lignes.forEach(row => {
+    produits.push({
+      productId: parseInt(row.dataset.pid),
+      qte: parseInt(row.cells[0].textContent),
+      pu: parseFloat(row.cells[2].textContent),
+      pt: parseFloat(row.cells[3].textContent),
     });
+  });
 
-    fetch("/caisse/Encaisser", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(produits)
-    })
-    .then(res => res.json())
-    .then(data => {
-      if (data.ticketId) {
-        resetTicket();
-      } else {
-        alert("Erreur encaissement");
-      }
-    });
-  }
+  fetch("/caisse/Encaisser", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(produits)
+  })
+  .then(res => res.json())
+  .then(data => {
+    if (data.ticketId) {
+      resetTicket();
+      // optional: refresh products zone if you want to see new quantities immediately
+      // loadProducts(currentCategoryId);
+    } else {
+      alert(data.error || "Erreur encaissement");
+    }
+  });
+}
+
+
 </script>
 {% endblock %}
