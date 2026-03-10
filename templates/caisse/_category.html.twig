@@ -1,6 +1,11 @@
-{% for category in categories %}
-  <button class="btn btn-outline-success mb-2 w-100"
-          onclick="loadProducts({{ category.id }})">
-    {{ category.categoryName }}
-  </button>
-{% endfor %}
+<div class="list-group">
+  {% for category in categories %}
+    <a href="#"
+       class="list-group-item list-group-item-action"
+       onclick="loadProducts({{ category.id }}); return false;">
+      {{ category.categoryName }}
+    </a>
+  {% else %}
+    <p class="text-muted text-center">Aucune catégorie trouvée</p>
+  {% endfor %}
+</div>

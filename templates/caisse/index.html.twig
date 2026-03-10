@@ -102,6 +102,11 @@ function encaisser() {
   const lignes = document.querySelectorAll("#ticketBody tr");
   const produits = [];
 
+  if (lignes.length === 0) {
+    alert("Le ticket est vide");
+    return;
+  }
+
   lignes.forEach(row => {
     produits.push({
       productId: parseInt(row.dataset.pid),
@@ -119,13 +124,55 @@ function encaisser() {
   .then(res => res.json())
   .then(data => {
     if (data.ticketId) {
+      printTicket(data.ticketId, produits);
       resetTicket();
-      // optional: refresh products zone if you want to see new quantities immediately
-      // loadProducts(currentCategoryId);
     } else {
       alert(data.error || "Erreur encaissement");
     }
+  })
+  .catch(err => {
+    console.error("Erreur:", err);
+    alert("Erreur réseau ou serveur");
   });
+}
+
+function printTicket(ticketId, produits) {
+  const now = new Date();
+  const date = now.toLocaleDateString('fr-FR') + ' ' + now.toLocaleTimeString('fr-FR');
+  let total = 0;
+
+  let rows = '';
+  produits.forEach(p => {
+    total += p.pt;
+    rows += '<tr><td>' + p.qte + '</td><td>' + p.pu.toFixed(3) + '</td><td>' + p.pt.toFixed(3) + '</td></tr>';
+  });
+
+  const printWindow = window.open('', '_blank', 'width=300,height=500');
+  printWindow.document.write(
+    '<html><head><title>Ticket #' + ticketId + '</title>' +
+    '<style>' +
+    'body { font-family: monospace; font-size: 12px; width: 280px; margin: 0 auto; padding: 10px; }' +
+    'h2 { text-align: center; margin: 5px 0; }' +
+    'table { width: 100%; border-collapse: collapse; margin: 10px 0; }' +
+    'th, td { text-align: right; padding: 2px 4px; }' +
+    'th:first-child, td:first-child { text-align: center; }' +
+    '.total { font-weight: bold; text-align: right; font-size: 14px; margin-top: 10px; border-top: 1px dashed #000; padding-top: 5px; }' +
+    '.separator { border-top: 1px dashed #000; margin: 5px 0; }' +
+    '@media print { body { margin: 0; } }' +
+    '</style></head><body>' +
+    '<h2>BonApp</h2>' +
+    '<p>Ticket #' + ticketId + '<br>Date: ' + date + '</p>' +
+    '<div class="separator"></div>' +
+    '<table><thead><tr><th>Qte</th><th>P.U</th><th>P.T</th></tr></thead>' +
+    '<tbody>' + rows + '</tbody></table>' +
+    '<div class="total">Total: ' + total.toFixed(3) + ' DT</div>' +
+    '<div class="separator"></div>' +
+    '<p style="text-align:center;">Merci pour votre visite !</p>' +
+    '</body></html>'
+  );
+  printWindow.document.close();
+  printWindow.focus();
+  printWindow.print();
 }
 
 
